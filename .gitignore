@@ -8,6 +8,9 @@ data/message_copy_dict.pickle
 ### dotenv ###
 .env
 
+### Session ###
+*.session
+
 ### Python ###
 # Byte-compiled / optimized / DLL files
 __pycache__/
