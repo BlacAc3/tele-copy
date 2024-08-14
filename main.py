@@ -48,26 +48,6 @@ send_message_result = None
 # App methods #
 #--------------------------------------------------------------------------
 
-#Copy function for all message types
-async def copy_message(tg: TelegramClient, chat_recipient: int, message_obj: Message):
-    sent_message_obj = await tg.send_message(
-        chat_recipient,
-        message = message_obj.message,
-        reply_to=message_obj.reply_to,
-        silent=message_obj.silent,
-        file=message_obj.media,  # Assuming 'media' is the media file to send
-
-        # parse_mode=message_obj.parse_mode,
-        # reply_markup=message_obj.reply_markup,
-        # clear_draft=message_obj.clear_draft,
-        buttons=message_obj.buttons,  # Assuming 'buttons' are the inline keyboard buttons
-    )
-    print("Message sent successfully!\n")
-    return sent_message_obj
-
-
-
-
 
 #Main function
 async def main():
@@ -103,18 +83,17 @@ async def main():
             src_chat_id = int(src_chat_id)
             dst_chat_id = int(dst_chat_id)
 
-
         src_entity =await tg.get_entity(src_chat_id)
         dst_entity =await tg.get_entity(dst_chat_id)
         print(f'Retrieved Entities: \nSource-->{src_entity.title} \n Destination --> {dst_entity.title}\n')
 
         #Fetch ids from source and Destination
         print(f"Fetching messages from src_chat {src_entity.title}...")
-        collector_for_all_message_ids_in_src_chat = collect_messages(src_chat_id)
+        collector_for_all_message_ids_in_src_chat = await collect_messages(tg,src_chat_id)
         print(f"Got a total of {len(collector_for_all_message_ids_in_src_chat)} messages from source chat")
         print()
         print(f"Fetching messages from dst_chat_id {dst_entity.title}...")
-        collector_for_all_message_ids_in_dst_chat_id = collect_messages(dst_chat_id)
+        collector_for_all_message_ids_in_dst_chat_id =await collect_messages(tg, dst_chat_id)
 
 
         print("Processing...")
@@ -145,17 +124,15 @@ async def main():
         print(f"created link: {message_id} => {new_message_id}")
         message_copy_dict.update({message_id: new_message_id})
 
-
-
         print("...done.")
         makedirs("data",exist_ok=True)
         with open("data/message_copy_dict.pickle", "wb") as f:
             pickle.dump(message_copy_dict, f)
 
-    #tg.idle()
 
 # get messages from chat id
-def collect_messages(chat_id: int):
+# -----------------------------------
+async def collect_messages(tg:TelegramClient, chat_id: int):
     last = 0
     message_ids=[]
     while True:
@@ -175,6 +152,24 @@ def collect_messages(chat_id: int):
             break
     return message_ids
 
+
+#Copy function for all message types
+# ----------------------------------------------
+async def copy_message(tg: TelegramClient, chat_recipient: int, message_obj: Message):
+    sent_message_obj = await tg.send_message(
+        chat_recipient,
+        message = message_obj.message,
+        reply_to=message_obj.reply_to,
+        silent=message_obj.silent,
+        file=message_obj.media,  # Assuming 'media' is the media file to send
+
+        # parse_mode=message_obj.parse_mode,
+        # reply_markup=message_obj.reply_markup,
+        # clear_draft=message_obj.clear_draft,
+        buttons=message_obj.buttons,  # Assuming 'buttons' are the inline keyboard buttons
+    )
+    print("Message sent successfully!\n")
+    return sent_message_obj
 
 
 
