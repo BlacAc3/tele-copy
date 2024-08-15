@@ -200,7 +200,7 @@ async def collect_messages(tg:TelegramClient, chat_id: int):
         message_ids=[]
         # while True:
         print(".",end="",flush=True)
-        messages = await tg.get_messages(chat_id, limit=100000)
+        messages = await tg.get_messages(chat_id, limit=1_000_000)
         if not messages.total:
             print("Chat is Empty!")
             return message_ids
