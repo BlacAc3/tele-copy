@@ -30,7 +30,7 @@ import asyncio
 
 from dotenv import load_dotenv, find_dotenv
 from telethon.sync import TelegramClient, events
-from telethon.tl.types import InputPeerChat, InputPeerUser, Message, MessageReplyHeader, MessageMediaDocument
+from telethon.tl.types import InputPeerChat, InputPeerUser, Message, MessageReplyHeader, MessageMediaDocument, User, Channel, MessageMediaWebPage
 
 
 
@@ -96,15 +96,17 @@ async def main():
         #Get Source and Destination Chat entity
         src_entity =await tg.get_entity(src_chat_id)
         dst_entity =await tg.get_entity(dst_chat_id)
-        print(f'Retrieved Entities: \nSource-->{src_entity.title} \n Destination --> {dst_entity.title}\n')
+        src_title = get_title(src_entity)
+        dst_title = get_title(dst_entity)
+        print(f'Retrieved Entities: \nSource-->{src_title} \n Destination --> {dst_title}\n')
 
         #Fetch ids from source and Destination
-        print(f"Fetching messages from src_chat {src_entity.title}...")
+        print(f"Fetching messages from src_chat {src_title}...")
         collector_for_all_message_ids_in_src_chat = await collect_messages(tg, src_chat_id)
         print(f"Got a total of {len(collector_for_all_message_ids_in_src_chat)} messages from source chat")
 
         print()
-        print(f"Fetching messages from dst_chat_id {dst_entity.title}...")
+        print(f"Fetching messages from dst_chat_id {dst_title}...")
         collector_for_all_message_ids_in_dst_chat_id =await collect_messages(tg, dst_chat_id)
 
 
@@ -217,6 +219,7 @@ async def collect_messages(tg:TelegramClient, chat_id: int):
 async def copy_message(tg: TelegramClient, chat_recipient: int, message_obj: Message):
     reply_message:Message = None #Holds message being replied to!
     dest_id = DEST_ID
+    link_preview:bool = False
 
     # if message is a reply to another message
     if message_obj.reply_to:
@@ -229,23 +232,38 @@ async def copy_message(tg: TelegramClient, chat_recipient: int, message_obj: Mes
             print(f"Error in copy_message function----> {e}")
             print(message_obj)
 
+    if isinstance(message_obj.media, MessageMediaWebPage):
+        message_obj.media = None
+        link_preview = True
 
-    sent_message_obj = await tg.send_message(
-        chat_recipient,
-        message = message_obj.message,
-        reply_to=reply_message,
-        silent=message_obj.silent,
-        file=message_obj.media,  # Assuming 'media' is the media file to send
-
-        # parse_mode=message_obj.parse_mode,
-        # reply_markup=message_obj.reply_markup,
-        # clear_draft=message_obj.clear_draft,
-    )
+    try:
+        sent_message_obj = await tg.send_message(
+            chat_recipient,
+            message = message_obj.message,
+            reply_to=reply_message,
+            silent=message_obj.silent,
+            file=message_obj.media,  # Assuming 'media' is the media file to send
+            link_preview = link_preview
+            # parse_mode=message_obj.parse_mode,
+            # reply_markup=message_obj.reply_markup,
+            # clear_draft=message_obj.clear_draft,
+        )
+    except Exception as e:
+        print()
+        print(message_obj)
+        print(f"Error found while Sending message ----> {e}")
 
     # append message ID link from old message to new
     link_copied_message_id[f"{message_obj.id}"] = sent_message_obj.id
     print(f"Message of ID ->{message_obj.id} sent successfully!")
     return sent_message_obj
+
+def get_title(entity):
+    if type(entity) == User:
+        return entity.first_name
+    elif type(entity) == Channel:
+        return entity.title
+
 
 
 
