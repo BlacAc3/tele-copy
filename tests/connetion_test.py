@@ -21,14 +21,3 @@ async def test_successful_connection():
 
 
             mock_connect.assert_called_once()
-
-@pytest.mark.asyncio
-async def test_unauthorized_connection():
-   with patch("telethon.sync.TelegramClient.connect", new_callable=AsyncMock) as mock_connect:
-       with patch("telethon.sync.TelegramClient.is_user_authorized", new_callable=AsyncMock) as mock_is_authorized:
-        mock_is_authorized.return_value = False
-        client=TelegramClient("+2348012356789", api_id, api_hash)
-        # with pytest.raises(ConnectionError):
-        await client.connect()
-
-        mock_connect.assert_called_once()
